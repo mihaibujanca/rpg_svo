@@ -16,7 +16,6 @@
 
 #include <svo/feature_detection.h>
 #include <svo/feature.h>
-#include <fast/fast.h>
 #include <vikit/vision.h>
 
 namespace svo {
@@ -73,27 +72,16 @@ void FastDetector::detect(
   for(int L=0; L<n_pyr_levels_; ++L)
   {
     const int scale = (1<<L);
-    vector<fast::fast_xy> fast_corners;
-#if __SSE2__
-      fast::fast_corner_detect_10_sse2(
-          (fast::fast_byte*) img_pyr[L].data, img_pyr[L].cols,
-          img_pyr[L].rows, img_pyr[L].cols, 20, fast_corners);
-#elif HAVE_FAST_NEON
-      fast::fast_corner_detect_9_neon(
-          (fast::fast_byte*) img_pyr[L].data, img_pyr[L].cols,
-          img_pyr[L].rows, img_pyr[L].cols, 20, fast_corners);
-#else
-      fast::fast_corner_detect_10(
-          (fast::fast_byte*) img_pyr[L].data, img_pyr[L].cols,
-          img_pyr[L].rows, img_pyr[L].cols, 20, fast_corners);
-#endif
-    vector<int> scores, nm_corners;
-    fast::fast_corner_score_10((fast::fast_byte*) img_pyr[L].data, img_pyr[L].cols, fast_corners, 20, scores);
-    fast::fast_nonmax_3x3(fast_corners, scores, nm_corners);
 
-    for(auto it=nm_corners.begin(), ite=nm_corners.end(); it!=ite; ++it)
+    cv::FastFeatureDetector fast_detector = cv::FastFeatureDetector(20, true);
+    vector<cv::KeyPoint> key_points;
+
+    fast_detector.detect(img_pyr[L], key_points);
+
+    for(auto it=key_points.begin(), ite=key_points.end(); it!=ite; ++it)
     {
-      fast::fast_xy& xy = fast_corners.at(*it);
+      cv::Point2f xy = it->pt;
+
       const int k = static_cast<int>((xy.y*scale)/cell_size_)*grid_n_cols_
                   + static_cast<int>((xy.x*scale)/cell_size_);
       if(grid_occupancy_[k])
