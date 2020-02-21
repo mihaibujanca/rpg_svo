@@ -73,10 +73,10 @@ void FastDetector::detect(
   {
     const int scale = (1<<L);
 
-    cv::FastFeatureDetector fast_detector = cv::FastFeatureDetector(20, true);
+    auto fast_detector = cv::FastFeatureDetector::create(20, true);
     vector<cv::KeyPoint> key_points;
 
-    fast_detector.detect(img_pyr[L], key_points);
+    fast_detector->detect(img_pyr[L], key_points);
 
     for(auto it=key_points.begin(), ite=key_points.end(); it!=ite; ++it)
     {
